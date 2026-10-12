@@ -1,0 +1,5 @@
+target/
+projects/*/reports/
+projects/*/testdata/secrets.json
+sample-projects/*/testdata/secrets.json
+**/testdata/excel/

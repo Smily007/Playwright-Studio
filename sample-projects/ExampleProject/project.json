@@ -1,0 +1,29 @@
+{
+  "projectName" : "ExampleProject",
+  "baseUrl" : "https://example.com",
+  "browserConfig" : {
+    "browser" : "chromium", "headless" : false, "executablePath" : "", "viewportWidth" : 1280, "viewportHeight" : 720,
+    "timeoutMs" : 15000, "slowMoMs" : 0, "recordVideo" : false, "screenshotMode" : "failure", "trace" : "on-failure",
+    "retryCount" : 0, "threadCount" : 1
+  },
+  "tests" : [
+    {
+      "name" : "ExampleTest",
+      "steps" : [
+        { "action" : "NAVIGATE", "params" : { "url" : "https://example.com" } },
+        { "action" : "ASSERT_PAGE_HAS_TITLE", "params" : { "title" : "Example Domain" } },
+        { "action" : "ASSERT_IS_VISIBLE", "locator" : { "locatorType" : "ROLE", "role" : "heading", "locatorValue" : "Example Domain" } },
+        { "action" : "ASSERT_HAS_TEXT", "locator" : { "locatorType" : "ROLE", "role" : "heading", "locatorValue" : "Example Domain" }, "params" : { "expected" : "Example Domain" } }
+      ]
+    },
+    {
+      "name" : "ExampleFailingTest",
+      "steps" : [
+        { "action" : "NAVIGATE", "params" : { "url" : "https://example.com" } },
+        { "action" : "ASSERT_HAS_TEXT", "description" : "Intentional failure: heading text is wrong",
+          "locator" : { "locatorType" : "ROLE", "role" : "heading", "locatorValue" : "Example Domain" },
+          "params" : { "expected" : "This text does not exist", "timeout" : "2000" } }
+      ]
+    }
+  ]
+}
