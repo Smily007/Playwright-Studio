@@ -521,6 +521,10 @@
     -fx-prompt-text-fill: #80868b;
 }
 
+.combo-box {
+    -fx-padding: 0 6 0 6;
+}
+
 .text-field,
 .combo-box {
     -fx-min-height: 36px;
@@ -542,7 +546,8 @@
 }
 
 .combo-box .list-cell {
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 2 8 2 8;
+    -fx-alignment: center-left;
 }
 
 .combo-box-base .arrow-button {
