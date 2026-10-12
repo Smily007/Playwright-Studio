@@ -93,6 +93,32 @@
     -fx-max-width: 48px;
 }
 
+.sidebar-toggle {
+    -fx-min-width: 36px;
+    -fx-pref-width: 36px;
+    -fx-max-width: 36px;
+    -fx-min-height: 36px;
+    -fx-pref-height: 36px;
+    -fx-max-height: 36px;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-color: transparent;
+    -fx-font-size: 1.35em;
+    -fx-text-fill: #5f6368;
+    -fx-cursor: hand;
+}
+
+.sidebar-toggle:hover {
+    -fx-background-color: #f1f3f4;
+    -fx-text-fill: #202124;
+}
+
+.sidebar-toggle:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a73e8;
+}
+
 .test-sidebar {
     -fx-background-color: #ffffff;
     -fx-border-color: transparent;
@@ -122,11 +148,28 @@
 }
 
 .action-delete-test {
-    -fx-min-height: 28px;
-    -fx-pref-height: 28px;
-    -fx-max-height: 28px;
-    -fx-font-size: 0.82em;
-    -fx-padding: 2 10 2 8;
+    -fx-min-width: 24px;
+    -fx-pref-width: 24px;
+    -fx-max-width: 24px;
+    -fx-min-height: 24px;
+    -fx-pref-height: 24px;
+    -fx-max-height: 24px;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-font-size: 0.95em;
+    -fx-text-fill: #d93025;
+    -fx-cursor: hand;
+}
+
+.action-delete-test:hover {
+    -fx-background-color: #fce8e6;
+    -fx-text-fill: #b3261e;
+}
+
+.delete-test-icon {
+    -fx-fill: #d93025;
 }
 
 /* ==========================================================================

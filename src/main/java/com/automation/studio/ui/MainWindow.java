@@ -45,6 +45,7 @@ import javafx.css.PseudoClass;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
+import javafx.scene.shape.SVGPath;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.geometry.Rectangle2D;
@@ -73,6 +74,7 @@ public class MainWindow {
     private final Label titleProject = new Label("No project open");
     private VBox toolbarPanel;
     private Button toolbarToggle;
+    private ToggleButton explorerToggle;
     private Node stepsPane;
 
     private final ActionCatalog catalog = new ActionCatalog();
@@ -169,9 +171,9 @@ public class MainWindow {
         top.getStyleClass().add("top-shell");
         root.setTop(top);
 
-        testList.setPrefWidth(155);
-        testList.setMinWidth(120);
-        testList.setMaxWidth(240);
+        testList.setPrefWidth(180);
+        testList.setMinWidth(0);
+        testList.setMaxWidth(Double.MAX_VALUE);
         testList.setAccessibleText("Test Explorer");
         testList.setPlaceholder(new Label("No test cases yet. Use New test to add one."));
         testList.getStyleClass().add("explorer-list");
@@ -187,7 +189,19 @@ public class MainWindow {
                     dot.setStyle("-fx-text-fill: #1a73e8; -fx-font-size: 15px; -fx-font-weight: bold;");
                     Label name = new Label(item.name);
                     name.setStyle("-fx-font-weight: 500; -fx-text-fill: #202124;");
-                    HBox row = new HBox(6, dot, name);
+                    HBox.setHgrow(name, Priority.ALWAYS);
+                    name.setMaxWidth(Double.MAX_VALUE);
+                    SVGPath trashIcon = new SVGPath();
+                    trashIcon.setContent("M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z");
+                    trashIcon.getStyleClass().add("delete-test-icon");
+                    Button delete = new Button();
+                    delete.setGraphic(trashIcon);
+                    delete.getStyleClass().add("action-delete-test");
+                    delete.setAccessibleText("Delete test " + item.name);
+                    delete.setTooltip(new Tooltip("Delete test"));
+                    delete.setFocusTraversable(true);
+                    delete.setOnAction(e -> deleteTest(item));
+                    HBox row = new HBox(6, dot, name, delete);
                     row.setAlignment(Pos.CENTER_LEFT);
                     setGraphic(row);
                     setText(null);
@@ -200,21 +214,29 @@ public class MainWindow {
                 loadTest(b);
             }
         });
-        Button newTest = IconButton.create("New test", "+", this::newTest);
-        newTest.getStyleClass().addAll("button-secondary", "action-new-test");
-        Button delTest = IconButton.create("Delete test", "×", this::deleteTest);
-        delTest.getStyleClass().addAll("button-quiet", "action-delete-test");
-        FlowPane testButtons = new FlowPane(6, 6, newTest, delTest);
         Label explorerTitle = new Label("TEST EXPLORER");
-        VBox left = new VBox(6, explorerTitle, testList, testButtons);
+        Button newTest = new Button("+");
+        newTest.getStyleClass().addAll("button-secondary", "action-new-test");
+        newTest.setAccessibleText("New test");
+        newTest.setTooltip(new Tooltip("New test"));
+        newTest.setOnAction(e -> newTest());
+        Region headerSpacer = new Region();
+        HBox explorerHeader = new HBox(explorerTitle, headerSpacer, newTest);
+        explorerHeader.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        VBox left = new VBox(6, explorerHeader, testList);
         left.getStyleClass().add("test-sidebar");
         explorerTitle.getStyleClass().add("section-title");
         left.setPadding(new Insets(8));
+        left.setMinWidth(0);
+        left.setMaxWidth(Double.MAX_VALUE);
+        explorerHeader.setMinWidth(0);
         VBox.setVgrow(testList, Priority.ALWAYS);
         testSidebar = left;
         HBox sidebarDock = new HBox(buildActivityBar(), left);
         sidebarDock.getStyleClass().add("sidebar-dock");
-        root.setLeft(sidebarDock);
+        sidebarDock.setMinWidth(0);
+        HBox.setHgrow(left, Priority.ALWAYS);
 
         stepsPane = buildStepsPane();
         if (stepsPane instanceof Region region) region.setMinSize(0, 0);
@@ -223,7 +245,11 @@ public class MainWindow {
         main.setMinSize(0, 0);
         livePanel.setNavHandler(this::liveNav);
         livePanel.setInspectHandler(this::applyInspectedXPath);
-        root.setCenter(main);
+        SplitPane workspace = new SplitPane(sidebarDock, main);
+        workspace.setOrientation(Orientation.HORIZONTAL);
+        workspace.setDividerPositions(0.24);
+        workspace.setMinSize(0, 0);
+        root.setCenter(workspace);
 
         result.getStyleClass().add("result-idle");
         openReport.setDisable(true);
@@ -255,13 +281,8 @@ public class MainWindow {
         }
         livePanel.setMinSize(0, narrow ? Math.min(150, height * 0.22) : 0);
 
-        double sidebarWidth = compact ? 92 : Math.max(108, Math.min(240, width * 0.14));
-        testList.setMinWidth(Math.max(compact ? 64 : 84, sidebarWidth - 20));
-        if (testSidebar != null) {
-            testSidebar.setPrefWidth(sidebarWidth);
-            testSidebar.setMinWidth(compact ? 76 : Math.min(108, sidebarWidth));
-            testSidebar.setMaxWidth(240);
-        }
+        testList.setPrefWidth(compact ? 120 : Math.max(160, Math.min(260, width * 0.14)));
+        if (testSidebar != null) testSidebar.setMinWidth(0);
     }
 
     private void applyResponsiveFontSize(Region root, double width, double height) {
@@ -303,8 +324,23 @@ public class MainWindow {
     private Node buildActivityBar() {
         activityBar.getStyleClass().add("activity-bar");
         activityBar.setAlignment(Pos.TOP_CENTER);
-        activityBar.getChildren().setAll(StudioBrand.mark());
+        explorerToggle = new ToggleButton("▤");
+        explorerToggle.getStyleClass().add("sidebar-toggle");
+        explorerToggle.setSelected(true);
+        explorerToggle.setAccessibleText("Hide Test Explorer");
+        explorerToggle.setTooltip(new Tooltip("Hide Test Explorer"));
+        explorerToggle.setFocusTraversable(true);
+        explorerToggle.setOnAction(e -> setTestSidebarVisible(explorerToggle.isSelected()));
+        activityBar.getChildren().setAll(StudioBrand.mark(), explorerToggle);
         return activityBar;
+    }
+
+    private void setTestSidebarVisible(boolean visible) {
+        testSidebar.setVisible(visible);
+        testSidebar.setManaged(visible);
+        String action = visible ? "Hide" : "Show";
+        explorerToggle.setAccessibleText(action + " Test Explorer");
+        explorerToggle.setTooltip(new Tooltip(action + " Test Explorer"));
     }
 
     private MenuBar buildMenu() {
@@ -319,7 +355,8 @@ public class MainWindow {
                 new SeparatorMenuItem(), recentMenu);
         refreshRecent();
 
-        Menu tests = new Menu("Test Cases", null, item("New test case...", this::newTest), item("Delete test case", this::deleteTest),
+        Menu tests = new Menu("Test Cases", null, item("New test case...", this::newTest),
+                item("Delete selected test case", () -> deleteTest(testList.getSelectionModel().getSelectedItem())),
                 item("Run all tests (suite)", () -> runTests(true)));
         Menu browserM = new Menu("Browser", null, item("Start browser", () -> launchBrowser(false)), item("Stop browser", this::stopBrowser),
                 item("Install Playwright browsers", () -> playwrightCli(List.of("install"))),
@@ -1015,12 +1052,14 @@ public class MainWindow {
         testList.getSelectionModel().select(tc);
     }
 
-    private void deleteTest() {
-        TestCase tc = testList.getSelectionModel().getSelectedItem();
-        if (tc == null) return;
-        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Delete test case '" + tc.name + "'?");
+    private void deleteTest(TestCase tc) {
+        if (tc == null || project == null || !testList.getItems().contains(tc)) return;
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION);
         a.initOwner(stage);
-        if (a.showAndWait().filter(b -> b == ButtonType.OK).isEmpty()) return;
+        a.setTitle("Delete test case");
+        a.setHeaderText("Delete test case '" + tc.name + "'?");
+        a.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+        if (a.showAndWait().filter(b -> b == ButtonType.YES).isEmpty()) return;
         testList.getItems().remove(tc);
         project.tests.remove(tc);
         if (pendingDebugTest == tc) clearPendingDebugger();
