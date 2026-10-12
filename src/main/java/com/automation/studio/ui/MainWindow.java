@@ -123,7 +123,6 @@ public class MainWindow {
     private final LiveBrowserPanel livePanel = new LiveBrowserPanel();
     private final ComboBox<String> viewBox = new ComboBox<>();
     private final ComboBox<String> projectBox = new ComboBox<>();
-    private final Label excelDataStatus = new Label("No Excel test data");
     private final Menu recentMenu = new Menu("Recent projects");
     private boolean updatingProjectChoices;
     private boolean restoringTestSelection;
@@ -454,12 +453,11 @@ public class MainWindow {
         IconButton.configure(clearExcel, "Clear Excel data", "×");
         clearExcel.getStyleClass().addAll("button-quiet", "toolbar-button");
         clearExcel.setOnAction(e -> clearExcelData());
-        HBox actions = new HBox(8, start, stop, startRec, stopRec, runBtn, debugBtn,
+        FlowPane actions = new FlowPane(8, 6, start, stop, startRec, stopRec, runBtn, debugBtn,
                 debugForwardBtn, debugContinueBtn, debugStopBtn, importExcel, clearExcel);
         actions.getStyleClass().add("toolbar-action-row");
         actions.setAlignment(Pos.CENTER_LEFT);
         actions.setPadding(new Insets(4, 6, 4, 6));
-        ScrollPane actionScroll = toolbarRowScroll(actions, 44);
 
         urlField.setMaxWidth(Double.MAX_VALUE);
         Label urlLabel = new Label("URL:");
@@ -479,21 +477,16 @@ public class MainWindow {
         viewBox.setAccessibleText("Browser window view mode");
         HBox viewInput = new HBox(6, viewLabel, viewBox);
         viewInput.getStyleClass().add("toolbar-input");
-        excelDataStatus.setWrapText(true);
-        excelDataStatus.setPrefWidth(170);
-        excelDataStatus.setMinWidth(80);
         Label projectLabel = new Label("Project:");
         projectLabel.setLabelFor(projectBox);
         projectBox.setAccessibleText("Recent project folders");
-        excelDataStatus.setAccessibleText("Excel data status");
-        excelDataStatus.getStyleClass().add("excel-data-badge");
-        HBox selectors = new HBox(10, urlInput, projectLabel, projectBox, browserInput, viewInput, excelDataStatus);
+        HBox selectors = new HBox(10, urlInput, projectLabel, projectBox, browserInput, viewInput);
         selectors.getStyleClass().add("toolbar-dropdown-row");
         selectors.setAlignment(Pos.CENTER_LEFT);
         selectors.setPadding(new Insets(2, 6, 4, 6));
         HBox.setHgrow(urlInput, Priority.ALWAYS);
         ScrollPane selectorScroll = toolbarRowScroll(selectors, 44);
-        VBox toolbar = new VBox(actionScroll, selectorScroll);
+        VBox toolbar = new VBox(actions, selectorScroll);
         toolbar.getStyleClass().add("toolbar-surface");
         return toolbar;
     }
@@ -845,7 +838,6 @@ public class MainWindow {
         config.addRecent(p.root);
         refreshRecent();
         refreshProjectChoices();
-        refreshExcelDataStatus();
         browserBox.setValue(p.browserConfig.browser);
         headless.setSelected(p.browserConfig.headless);
         setViewBox(p.browserConfig.viewMode);
@@ -982,7 +974,6 @@ public class MainWindow {
             project.excelDataFile = project.root.relativize(destination).toString().replace('\\', '/');
             project.excelSheetName = selectedSheet.get();
             if (!saveProject(false)) return;
-            refreshExcelDataStatus();
             log("Imported Excel worksheet '" + selectedSheet.get() + "' with " + rows.size() + " data row(s).");
         } catch (IOException e) {
             showError("Cannot import Excel data", e);
@@ -994,7 +985,6 @@ public class MainWindow {
         project.excelDataFile = "";
         project.excelSheetName = "";
         if (saveProject(false)) {
-            refreshExcelDataStatus();
             log("Excel data disabled for this project.");
         }
     }
@@ -1006,21 +996,6 @@ public class MainWindow {
         if (!file.startsWith(projectRoot) || !java.nio.file.Files.isRegularFile(file))
             throw new IOException("The configured Excel data file is missing or outside the project folder.");
         return file;
-    }
-
-    private void refreshExcelDataStatus() {
-        if (project == null || project.excelDataFile == null || project.excelDataFile.isBlank()) {
-            excelDataStatus.setText("No Excel test data");
-            return;
-        }
-        try {
-            Path file = excelDataPath();
-            List<Map<String, String>> rows = TestData.loadExcel(file, project.excelSheetName);
-            excelDataStatus.setText(file.getFileName() + " / " + project.excelSheetName + " (" + rows.size() + " rows)");
-        } catch (IOException e) {
-            excelDataStatus.setText("Excel data unavailable");
-            log("ERROR Excel data: " + e.getMessage());
-        }
     }
 
     private boolean ensureProjectAndTest() {
