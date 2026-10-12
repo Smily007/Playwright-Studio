@@ -684,16 +684,18 @@
 }
 
 .browser-nav-btn {
-    -fx-min-width: 28px;
-    -fx-pref-width: 28px;
-    -fx-max-width: 28px;
-    -fx-min-height: 28px;
-    -fx-pref-height: 28px;
-    -fx-max-height: 28px;
-    -fx-background-radius: 14;
-    -fx-border-radius: 14;
+    -fx-min-width: 32px;
+    -fx-pref-width: 32px;
+    -fx-max-width: 32px;
+    -fx-min-height: 32px;
+    -fx-pref-height: 32px;
+    -fx-max-height: 32px;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
     -fx-padding: 0;
     -fx-alignment: center;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
 }
 
 .browser-inspect-btn {

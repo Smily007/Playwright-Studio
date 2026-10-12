@@ -40,9 +40,9 @@ public class LiveBrowserPanel extends BorderPane {
     private long lastMove;
 
     public LiveBrowserPanel() {
-        Button back = IconButton.create("Back", "‹", () -> navHandler.accept("GO_BACK"));
-        Button fwd = IconButton.create("Forward", "›", () -> navHandler.accept("GO_FORWARD"));
-        Button reload = IconButton.create("Reload", "↻", () -> navHandler.accept("RELOAD"));
+        Button back = navigationButton("‹", "Back", "GO_BACK");
+        Button fwd = navigationButton("›", "Forward", "GO_FORWARD");
+        Button reload = navigationButton("↻", "Refresh", "RELOAD");
         inspect.setTooltip(new Tooltip("Inspect a page element and capture its XPath"));
         inspect.setDisable(true);
         inspect.getStyleClass().addAll("button-secondary", "browser-inspect-btn");
@@ -143,6 +143,16 @@ public class LiveBrowserPanel extends BorderPane {
             char c = ch.charAt(0);
             if (c >= 32 && c != 127) { l.type(ch); e.consume(); }
         });
+    }
+
+    private Button navigationButton(String icon, String label, String action) {
+        Button button = new Button(icon);
+        button.getStyleClass().addAll("button-quiet", "browser-nav-btn");
+        button.setAccessibleText(label);
+        button.setTooltip(new Tooltip(label));
+        button.setFocusTraversable(true);
+        button.setOnAction(event -> navHandler.accept(action));
+        return button;
     }
 
     private void moved(MouseEvent e) {
