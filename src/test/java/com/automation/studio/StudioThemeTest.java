@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -39,5 +40,21 @@ public class StudioThemeTest {
         Assert.assertFalse(pane.getStylesheets().isEmpty());
         Assert.assertTrue(pane.getStylesheets().get(0).contains("studio.css"));
     }
-}
 
+    @Test
+    public void testAppearancePreferencesApplyToInstalledRoots() {
+        StackPane root = new StackPane();
+        Scene scene = new Scene(root);
+        StudioTheme.install(scene);
+        StudioTheme.configure("high-contrast", "larger");
+        Assert.assertTrue(root.getStyleClass().contains("theme-high-contrast"));
+        Assert.assertTrue(root.getStyleClass().contains("text-size-larger"));
+        Assert.assertEquals(StudioTheme.textScale(), 1.3);
+
+        StudioTheme.configure("dark", "large");
+        Assert.assertFalse(root.getStyleClass().contains("theme-high-contrast"));
+        Assert.assertTrue(root.getStyleClass().contains("theme-dark"));
+        Assert.assertTrue(root.getStyleClass().contains("text-size-large"));
+        StudioTheme.configure("light", "default");
+    }
+}

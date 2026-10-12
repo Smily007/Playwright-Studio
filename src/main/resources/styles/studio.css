@@ -139,6 +139,17 @@
     -fx-background-radius: 8;
 }
 
+.explorer-test-dot {
+    -fx-text-fill: #1a73e8;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.explorer-test-name {
+    -fx-font-weight: 500;
+    -fx-text-fill: #202124;
+}
+
 .action-new-test {
     -fx-min-height: 28px;
     -fx-pref-height: 28px;
@@ -863,6 +874,230 @@
 .scroll-bar:vertical,
 .scroll-bar:horizontal {
     -fx-background-color: transparent;
+}
+
+.text-size-large {
+    -fx-font-size: 15px;
+}
+
+.text-size-larger {
+    -fx-font-size: 17px;
+}
+
+.theme-dark,
+.theme-dark .studio-root,
+.theme-dark .top-shell,
+.theme-dark .title-bar,
+.theme-dark .test-sidebar,
+.theme-dark .explorer-list,
+.theme-dark .toolbar-surface,
+.theme-dark .toolbar-dropdown-row,
+.theme-dark .toolbar-action-row,
+.theme-dark .status-bar,
+.theme-dark .browser-toolbar,
+.theme-dark .split-pane,
+.theme-dark .dialog-pane,
+.theme-dark .scroll-pane,
+.theme-dark .scroll-pane > .viewport,
+.theme-dark .list-view,
+.theme-dark .table-view,
+.theme-dark .text-area,
+.theme-dark .text-field,
+.theme-dark .combo-box-base,
+.theme-dark .choice-box {
+    -fx-background-color: #202124;
+    -fx-text-fill: #e8eaed;
+}
+
+.theme-dark .activity-bar,
+.theme-dark .menu-bar.studio-menu,
+.theme-dark .toolbar-dropdown-row,
+.theme-dark .table-view .column-header-background,
+.theme-dark .table-view .column-header,
+.theme-dark .table-view .filler {
+    -fx-background-color: #292a2d;
+}
+
+.theme-dark .title-bar,
+.theme-dark .sidebar-dock,
+.theme-dark .activity-bar,
+.theme-dark .top-shell,
+.theme-dark .status-bar,
+.theme-dark .browser-toolbar,
+.theme-dark .test-sidebar,
+.theme-dark .explorer-list,
+.theme-dark .text-field,
+.theme-dark .text-area,
+.theme-dark .table-view,
+.theme-dark .list-view,
+.theme-dark .combo-box-base,
+.theme-dark .dialog-pane {
+    -fx-border-color: #5f6368;
+}
+
+.theme-dark .label,
+.theme-dark .check-box,
+.theme-dark .menu-bar .label,
+.theme-dark .menu-item .label,
+.theme-dark .explorer-test-name,
+.theme-dark .section-title,
+.theme-dark .brand-title,
+.theme-dark .text-field,
+.theme-dark .text-area,
+.theme-dark .table-view .label,
+.theme-dark .list-cell {
+    -fx-text-fill: #e8eaed;
+}
+
+.theme-dark .menu,
+.theme-dark .menu-item,
+.theme-dark .context-menu {
+    -fx-background-color: #292a2d;
+}
+
+.theme-dark .list-cell:filled:selected,
+.theme-dark .table-row-cell:selected {
+    -fx-background-color: #394457;
+}
+
+.theme-dark .list-cell:filled:hover,
+.theme-dark .table-row-cell:filled:hover {
+    -fx-background-color: #303134;
+}
+
+.theme-dark .table-row-cell,
+.theme-dark .table-row-cell:step-passed {
+    -fx-background-color: #202124;
+    -fx-border-color: transparent transparent #3c4043 transparent;
+}
+
+.theme-dark .table-row-cell:step-passed:filled:hover,
+.theme-dark .table-row-cell:step-passed:filled:selected {
+    -fx-background-color: #25452f;
+}
+
+.theme-dark .table-row-cell:step-failed {
+    -fx-background-color: #4a2929;
+}
+
+.theme-dark .text-area .content {
+    -fx-background-color: #202124;
+}
+
+.theme-dark .browser-viewport {
+    -fx-background-color: #171717;
+    -fx-border-color: #5f6368;
+}
+
+.theme-dark .toolbar-control,
+.theme-dark .browser-xpath-field {
+    -fx-background-color: #292a2d;
+    -fx-text-fill: #e8eaed;
+}
+
+.theme-high-contrast,
+.theme-high-contrast .studio-root,
+.theme-high-contrast .top-shell,
+.theme-high-contrast .title-bar,
+.theme-high-contrast .test-sidebar,
+.theme-high-contrast .explorer-list,
+.theme-high-contrast .toolbar-surface,
+.theme-high-contrast .toolbar-dropdown-row,
+.theme-high-contrast .toolbar-action-row,
+.theme-high-contrast .status-bar,
+.theme-high-contrast .browser-toolbar,
+.theme-high-contrast .split-pane,
+.theme-high-contrast .dialog-pane,
+.theme-high-contrast .scroll-pane,
+.theme-high-contrast .scroll-pane > .viewport,
+.theme-high-contrast .list-view,
+.theme-high-contrast .table-view,
+.theme-high-contrast .text-area,
+.theme-high-contrast .text-field,
+.theme-high-contrast .combo-box-base,
+.theme-high-contrast .choice-box,
+.theme-high-contrast .activity-bar,
+.theme-high-contrast .menu-bar.studio-menu,
+.theme-high-contrast .table-view .column-header-background,
+.theme-high-contrast .table-view .column-header,
+.theme-high-contrast .table-view .filler {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+}
+
+.theme-high-contrast .label,
+.theme-high-contrast .check-box,
+.theme-high-contrast .menu-bar .label,
+.theme-high-contrast .menu-item .label,
+.theme-high-contrast .explorer-test-name,
+.theme-high-contrast .section-title,
+.theme-high-contrast .brand-title,
+.theme-high-contrast .text-field,
+.theme-high-contrast .text-area,
+.theme-high-contrast .table-view .label,
+.theme-high-contrast .list-cell {
+    -fx-text-fill: #ffffff;
+}
+
+.theme-high-contrast .title-bar,
+.theme-high-contrast .sidebar-dock,
+.theme-high-contrast .activity-bar,
+.theme-high-contrast .top-shell,
+.theme-high-contrast .status-bar,
+.theme-high-contrast .browser-toolbar,
+.theme-high-contrast .test-sidebar,
+.theme-high-contrast .explorer-list,
+.theme-high-contrast .text-field,
+.theme-high-contrast .text-area,
+.theme-high-contrast .table-view,
+.theme-high-contrast .list-view,
+.theme-high-contrast .combo-box-base,
+.theme-high-contrast .dialog-pane,
+.theme-high-contrast .menu-item,
+.theme-high-contrast .context-menu {
+    -fx-border-color: #ffffff;
+}
+
+.theme-high-contrast .menu,
+.theme-high-contrast .menu-item,
+.theme-high-contrast .context-menu,
+.theme-high-contrast .text-area .content {
+    -fx-background-color: #000000;
+}
+
+.theme-high-contrast .list-cell:filled:selected,
+.theme-high-contrast .table-row-cell:selected {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffff00;
+}
+
+.theme-high-contrast .table-row-cell,
+.theme-high-contrast .table-row-cell:step-passed,
+.theme-high-contrast .table-row-cell:step-failed {
+    -fx-background-color: #000000;
+    -fx-border-color: transparent transparent #ffffff transparent;
+}
+
+.theme-high-contrast .list-cell:filled:hover,
+.theme-high-contrast .table-row-cell:filled:hover {
+    -fx-background-color: #333333;
+}
+
+.theme-high-contrast .explorer-test-dot,
+.theme-high-contrast .toolbar-control,
+.theme-high-contrast .browser-xpath-field {
+    -fx-text-fill: #ffff00;
+}
+
+.theme-high-contrast .button:focused,
+.theme-high-contrast .text-field:focused,
+.theme-high-contrast .combo-box-base:focused,
+.theme-high-contrast .check-box:focused,
+.theme-high-contrast .list-cell:focused,
+.theme-high-contrast .table-row-cell:focused {
+    -fx-focus-color: #ffff00;
+    -fx-faint-focus-color: #ffff00;
+    -fx-border-color: #ffff00;
 }
 
 .scroll-bar:vertical .thumb,

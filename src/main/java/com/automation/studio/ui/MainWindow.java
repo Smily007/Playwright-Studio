@@ -144,6 +144,7 @@ public class MainWindow {
         BorderPane root = buildRoot(main);
         Scene scene = new Scene(root, initialWidth, initialHeight);
         StudioTheme.install(scene);
+        StudioTheme.configure(config.get().theme, config.get().textSize);
         stage.setScene(scene);
         scene.widthProperty().addListener((o, oldWidth, newWidth) ->
                 adaptLayout(newWidth.doubleValue(), scene.getHeight(), main, root));
@@ -191,9 +192,9 @@ public class MainWindow {
                     setGraphic(null);
                 } else {
                     Label dot = new Label("•");
-                    dot.setStyle("-fx-text-fill: #1a73e8; -fx-font-size: 15px; -fx-font-weight: bold;");
+                    dot.getStyleClass().add("explorer-test-dot");
                     Label name = new Label(item.name);
-                    name.setStyle("-fx-font-weight: 500; -fx-text-fill: #202124;");
+                    name.getStyleClass().add("explorer-test-name");
                     HBox.setHgrow(name, Priority.ALWAYS);
                     name.setMaxWidth(Double.MAX_VALUE);
                     SVGPath trashIcon = new SVGPath();
@@ -292,12 +293,7 @@ public class MainWindow {
 
     private void applyResponsiveFontSize(Region root, double width, double height) {
         double scale = Math.max(0.85, Math.min(1.25, Math.min(width / 1280.0, height / 800.0)));
-        double fontSize = Math.round(12.0 * scale * 10.0) / 10.0;
-        Object previous = root.getProperties().get("studio.fontSize");
-        if (!(previous instanceof Double value) || Double.compare(fontSize, value) != 0) {
-            root.setStyle("-fx-font-size: " + fontSize + "px;");
-            root.getProperties().put("studio.fontSize", fontSize);
-        }
+        StudioTheme.setResponsiveFontSize(root, 12.0 * scale);
     }
 
     private Node buildTitleBar() {
@@ -367,7 +363,9 @@ public class MainWindow {
                 item("Install Playwright browsers", () -> playwrightCli(List.of("install"))),
                 item("Open Playwright Codegen / Inspector", this::openCodegen),
                 item("Open trace file in Trace Viewer...", this::openTrace));
-        Menu settings = new Menu("Settings", null, item("Browser & execution settings...", this::openSettings));
+        Menu settings = new Menu("Settings", null,
+                item("Appearance & accessibility...", this::openAppearanceSettings),
+                item("Browser & execution settings...", this::openSettings));
         Menu rep = new Menu("Reports", null, item("Open last report", () -> { if (lastReport != null) hosts.showDocument(lastReport.toUri().toString()); }),
                 item("Test history...", this::openHistory));
         MenuBar menuBar = new MenuBar(projectMenu, tests, browserM, settings, rep);
@@ -722,6 +720,7 @@ public class MainWindow {
         log("ERROR " + title + ": " + msg.split("\n")[0]);
         Alert a = new Alert(Alert.AlertType.ERROR, shown);
         a.initOwner(stage);
+        StudioTheme.install(a.getDialogPane());
         a.setTitle(title);
         a.setHeaderText(title);
         a.showAndWait();
@@ -730,12 +729,14 @@ public class MainWindow {
     private void info(String msg) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, msg);
         a.initOwner(stage);
+        StudioTheme.install(a.getDialogPane());
         a.showAndWait();
     }
 
     private Optional<String> ask(String title, String def) {
         TextInputDialog d = new TextInputDialog(def);
         d.initOwner(stage);
+        StudioTheme.install(d.getDialogPane());
         d.setTitle(title);
         d.setHeaderText(title);
         return d.showAndWait().map(String::trim).filter(s -> !s.isEmpty());
@@ -950,6 +951,7 @@ public class MainWindow {
             if (sheets.isEmpty()) throw new IOException("The workbook does not contain any worksheets.");
             ChoiceDialog<String> dialog = new ChoiceDialog<>(sheets.get(0), sheets);
             dialog.initOwner(stage);
+            StudioTheme.install(dialog.getDialogPane());
             dialog.setTitle("Choose Excel worksheet");
             dialog.setHeaderText("The first row of the selected worksheet is used as the test-data headers.");
             dialog.setContentText("Worksheet:");
@@ -960,6 +962,7 @@ public class MainWindow {
             String headers = String.join(", ", rows.get(0).keySet());
             Alert preview = new Alert(Alert.AlertType.INFORMATION);
             preview.initOwner(stage);
+            StudioTheme.install(preview.getDialogPane());
             preview.setTitle("Excel test data");
             preview.setHeaderText(rows.size() + " data row(s) found");
             preview.setContentText("Header names become test variables. Use them in step values as ${var:HeaderName}.\n\nHeaders: " + headers);
@@ -1037,6 +1040,7 @@ public class MainWindow {
         if (tc == null || project == null || !testList.getItems().contains(tc)) return;
         Alert a = new Alert(Alert.AlertType.CONFIRMATION);
         a.initOwner(stage);
+        StudioTheme.install(a.getDialogPane());
         a.setTitle("Delete test case");
         a.setHeaderText("Delete test case '" + tc.name + "'?");
         a.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
@@ -1328,6 +1332,7 @@ public class MainWindow {
             if (!ask) return;
             Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Regenerating the code from the recorded steps will overwrite your manual code changes. Continue?");
             a.initOwner(stage);
+            StudioTheme.install(a.getDialogPane());
             if (a.showAndWait().filter(b -> b == ButtonType.OK).isEmpty()) return;
         }
         setCode(generator.generate(current, project));
@@ -1574,6 +1579,25 @@ public class MainWindow {
             headless.setSelected(project.browserConfig.headless);
             saveProject(false);
         }
+    }
+
+    private void openAppearanceSettings() {
+        SettingsView.AppearancePreferences preferences = SettingsView.showAppearance(
+                stage, config.get().theme, config.get().textSize);
+        if (preferences == null) return;
+        config.get().theme = switch (preferences.theme()) {
+            case "Dark" -> "dark";
+            case "High contrast" -> "high-contrast";
+            default -> "light";
+        };
+        config.get().textSize = switch (preferences.textSize()) {
+            case "Large" -> "large";
+            case "Larger" -> "larger";
+            default -> "default";
+        };
+        config.save();
+        StudioTheme.configure(config.get().theme, config.get().textSize);
+        applyResponsiveFontSize((Region) stage.getScene().getRoot(), stage.getWidth(), stage.getHeight());
     }
 
     private void openHistory() {

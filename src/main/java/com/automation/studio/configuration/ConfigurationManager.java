@@ -16,6 +16,8 @@ public class ConfigurationManager {
     public static class Settings {
         public List<String> recentProjects = new ArrayList<>();
         public String projectsDir = Paths.get(System.getProperty("user.home"), "PlaywrightTestStudio", "projects").toString();
+        public String theme = "light";
+        public String textSize = "default";
     }
 
     private final Path file = Paths.get(System.getProperty("user.home"), ".playwright-test-studio", "settings.json");

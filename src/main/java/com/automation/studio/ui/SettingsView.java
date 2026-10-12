@@ -9,7 +9,50 @@ import javafx.stage.Window;
 
 /** Browser / execution settings dialog. Edits the given configuration in place when OK is pressed. */
 public final class SettingsView {
+    public record AppearancePreferences(String theme, String textSize) {}
+
     private SettingsView() {}
+
+    public static AppearancePreferences showAppearance(Window owner, String currentTheme, String currentTextSize) {
+        Dialog<AppearancePreferences> dialog = new Dialog<>();
+        dialog.initOwner(owner);
+        dialog.setTitle("Appearance and accessibility");
+        StudioTheme.install(dialog.getDialogPane());
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        ComboBox<String> theme = new ComboBox<>();
+        theme.getItems().addAll("Light", "Dark", "High contrast");
+        theme.setValue("dark".equals(currentTheme) ? "Dark"
+                : "high-contrast".equals(currentTheme) ? "High contrast" : "Light");
+        theme.setAccessibleText("Application color theme");
+
+        ComboBox<String> textSize = new ComboBox<>();
+        textSize.getItems().addAll("Default", "Large", "Larger");
+        textSize.setValue("large".equals(currentTextSize) ? "Large"
+                : "larger".equals(currentTextSize) ? "Larger" : "Default");
+        textSize.setAccessibleText("Application text size");
+
+        Label themeHelp = new Label("Choose a color theme. High contrast improves visibility.");
+        Label textHelp = new Label("Increase text size throughout the application.");
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(8);
+        grid.setPadding(new Insets(12));
+        grid.addRow(0, new Label("Theme"), theme);
+        grid.addRow(1, new Label("Text size"), textSize);
+        grid.add(themeHelp, 1, 2);
+        grid.add(textHelp, 1, 3);
+        GridPane.setHgrow(theme, Priority.ALWAYS);
+        GridPane.setHgrow(textSize, Priority.ALWAYS);
+        theme.setMaxWidth(Double.MAX_VALUE);
+        textSize.setMaxWidth(Double.MAX_VALUE);
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().setPrefWidth(440);
+        dialog.setResultConverter(button -> button == ButtonType.OK
+                ? new AppearancePreferences(theme.getValue(), textSize.getValue())
+                : null);
+        return dialog.showAndWait().orElse(null);
+    }
 
     public static boolean show(Window owner, BrowserConfiguration c) {
         Dialog<Boolean> dlg = new Dialog<>();
