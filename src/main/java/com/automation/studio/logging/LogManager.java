@@ -30,6 +30,10 @@ public class LogManager implements AutoCloseable {
 
     @Override
     public void close() {
+        shutdown();
+    }
+
+    public void shutdown() {
         root.detachAppender(appender);
         appender.stop();
     }

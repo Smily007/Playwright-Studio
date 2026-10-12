@@ -167,6 +167,10 @@ public class BrowserManager implements AutoCloseable {
 
     @Override
     public void close() {
+        shutdown();
+    }
+
+    public void shutdown() {
         try { stop().get(5, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) { }
         running = false;
         worker.interrupt();

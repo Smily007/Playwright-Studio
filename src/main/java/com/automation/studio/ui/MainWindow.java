@@ -5,7 +5,6 @@ import com.automation.studio.actions.ActionDefinition;
 import com.automation.studio.actions.StepDescriber;
 import com.automation.studio.browser.BrowserConfiguration;
 import com.automation.studio.browser.BrowserManager;
-import com.automation.studio.browser.LiveView;
 import com.automation.studio.browser.ViewOptions;
 import com.automation.studio.configuration.ConfigurationManager;
 import com.automation.studio.execution.DebuggerController;
@@ -38,7 +37,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.css.PseudoClass;
@@ -54,6 +52,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -152,13 +151,20 @@ public class MainWindow {
         scene.heightProperty().addListener((o, oldHeight, newHeight) ->
                 adaptLayout(scene.getWidth(), newHeight.doubleValue(), main, root));
         adaptLayout(initialWidth, initialHeight, main, root);
-        stage.setOnCloseRequest(e -> { recorder.setRecording(false); debugger.stop(); browser.close(); logManager.close(); });
+        stage.setOnCloseRequest(e -> closeStudioResources());
         stage.setMaximized(true);
         stage.show();
         browser.onBrowserClosed(msg -> Platform.runLater(() -> { log(msg); livePanel.clear(); setRecordingUi(false); recorder.setRecording(false); }));
         browser.onElementInspected((xpath, relativeXPath, frameSelector) ->
                 livePanel.setInspectResult(xpath, relativeXPath, frameSelector));
         log("Welcome. Create or open a project (Project menu), enter a URL and press START RECORDING.");
+    }
+
+    private void closeStudioResources() {
+        recorder.setRecording(false);
+        debugger.stop();
+        browser.shutdown();
+        logManager.shutdown();
     }
 
     // ------------------------------------------------------------------ UI construction
@@ -350,7 +356,7 @@ public class MainWindow {
         MenuItem saveAs = item("Save As...", this::saveProjectAs);
         MenuItem environments = item("Manage environments...", this::manageEnvironments);
         MenuItem closeP = item("Close project", this::closeProject);
-        Menu project = new Menu("Project", null, newP, openP, environments,
+        Menu projectMenu = new Menu("Project", null, newP, openP, environments,
                 item("Add Page Object class...", this::addPageObject), saveP, saveAs, closeP,
                 new SeparatorMenuItem(), recentMenu);
         refreshRecent();
@@ -358,14 +364,14 @@ public class MainWindow {
         Menu tests = new Menu("Test Cases", null, item("New test case...", this::newTest),
                 item("Delete selected test case", () -> deleteTest(testList.getSelectionModel().getSelectedItem())),
                 item("Run all tests (suite)", () -> runTests(true)));
-        Menu browserM = new Menu("Browser", null, item("Start browser", () -> launchBrowser(false)), item("Stop browser", this::stopBrowser),
+        Menu browserM = new Menu("Browser", null, item("Start browser", this::launchBrowser), item("Stop browser", this::stopBrowser),
                 item("Install Playwright browsers", () -> playwrightCli(List.of("install"))),
                 item("Open Playwright Codegen / Inspector", this::openCodegen),
                 item("Open trace file in Trace Viewer...", this::openTrace));
         Menu settings = new Menu("Settings", null, item("Browser & execution settings...", this::openSettings));
         Menu rep = new Menu("Reports", null, item("Open last report", () -> { if (lastReport != null) hosts.showDocument(lastReport.toUri().toString()); }),
                 item("Test history...", this::openHistory));
-        MenuBar menuBar = new MenuBar(project, tests, browserM, settings, rep);
+        MenuBar menuBar = new MenuBar(projectMenu, tests, browserM, settings, rep);
         menuBar.getStyleClass().add("studio-menu");
         return menuBar;
     }
@@ -395,7 +401,7 @@ public class MainWindow {
         Button start = new Button();
         IconButton.configure(start, "Start browser", "▶");
         start.getStyleClass().addAll("button-secondary", "toolbar-button");
-        start.setOnAction(e -> launchBrowser(false));
+        start.setOnAction(e -> launchBrowser());
         Button stop = new Button();
         IconButton.configure(stop, "Stop browser", "■");
         stop.getStyleClass().addAll("button-quiet", "toolbar-button");
@@ -756,7 +762,7 @@ public class MainWindow {
             Project created = createProject(parent.get(), name.get(), environments.get());
             applyProject(created);
             log("Created project at " + project.root);
-        } catch (Exception e) { showError("Cannot create project", e); }
+        } catch (IOException e) { showError("Cannot create project", e); }
     }
 
     private Optional<Path> chooseProjectParentDirectory() {
@@ -822,7 +828,7 @@ public class MainWindow {
     private void openProjectAt(Path dir) {
         if (!prepareProjectSwitch()) return;
         try { applyProject(projects.open(dir)); log("Opened project " + project.root); }
-        catch (Exception e) {
+        catch (IOException e) {
             refreshProjectChoices();
             showError("Cannot open project", e);
         }
@@ -862,7 +868,7 @@ public class MainWindow {
             projects.save(project);
             if (message) log("Project saved.");
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
             showError("Cannot save project", e);
             return false;
         }
@@ -879,7 +885,7 @@ public class MainWindow {
             applyProject(projects.saveAs(project, f.toPath()));
             log("Saved as " + project.root);
         }
-        catch (Exception e) { showError("Save As failed", e); }
+        catch (IOException e) { showError("Save As failed", e); }
     }
 
     private void closeProject() {
@@ -923,7 +929,7 @@ public class MainWindow {
             FileUtils.write(file, code.getText());
             log("Saved project code to " + file);
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
             showError("Cannot save project code", e);
             return false;
         }
@@ -978,7 +984,7 @@ public class MainWindow {
             if (!saveProject(false)) return;
             refreshExcelDataStatus();
             log("Imported Excel worksheet '" + selectedSheet.get() + "' with " + rows.size() + " data row(s).");
-        } catch (Exception e) {
+        } catch (IOException e) {
             showError("Cannot import Excel data", e);
         }
     }
@@ -1011,7 +1017,7 @@ public class MainWindow {
             Path file = excelDataPath();
             List<Map<String, String>> rows = TestData.loadExcel(file, project.excelSheetName);
             excelDataStatus.setText(file.getFileName() + " / " + project.excelSheetName + " (" + rows.size() + " rows)");
-        } catch (Exception e) {
+        } catch (IOException e) {
             excelDataStatus.setText("Excel data unavailable");
             log("ERROR Excel data: " + e.getMessage());
         }
@@ -1028,7 +1034,7 @@ public class MainWindow {
             if (parent.isEmpty()) return false;
             try {
                 applyProject(createProject(parent.get(), name.get(), environments.get()));
-            } catch (Exception e) { showError("Cannot create project", e); return false; }
+            } catch (IOException e) { showError("Cannot create project", e); return false; }
         }
         if (current == null) {
             Optional<String> name = ask("New test case name", "ExampleTest");
@@ -1088,7 +1094,7 @@ public class MainWindow {
                 codeDirty = false;
                 refreshCode(false);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             showError("Cannot load project code", e);
             codeDirty = false;
             refreshCode(false);
@@ -1195,7 +1201,7 @@ public class MainWindow {
             String key = (current == null ? "test" : FileUtils.sanitize(current.name).toLowerCase()) + "_password_" + (++secretCounter);
             TestData.putSecret(project.root, key, value);
             return "${secret:" + key + "}";
-        } catch (Exception e) {
+        } catch (IOException e) {
             log("Could not store secret: " + e.getMessage());
             return "";
         }
@@ -1223,7 +1229,7 @@ public class MainWindow {
             URI u = new URI(t);
             if (u.getHost() == null || !List.of("http", "https").contains(u.getScheme().toLowerCase())) return null;
             return t;
-        } catch (Exception e) { return null; }
+        } catch (URISyntaxException e) { return null; }
     }
 
     private void setRecordingUi(boolean on) {
@@ -1238,7 +1244,7 @@ public class MainWindow {
         recorder.setRecording(true);
         setRecordingUi(true);
         log("Recording started");
-        if (!browser.isRunning()) launchBrowser(true);
+        if (!browser.isRunning()) launchBrowser();
         else if (stepItems.isEmpty()) browser.currentUrl().thenAccept(u -> Platform.runLater(() -> addRecorded(new TestStep("NAVIGATE").with("url", u))));
     }
 
@@ -1259,7 +1265,7 @@ public class MainWindow {
         viewBox.setValue(ViewOptions.SIDE_BY_SIDE.equals(mode) ? "Side by side" : ViewOptions.SEPARATE.equals(mode) ? "Separate window" : "Embedded (one window)");
     }
 
-    private void launchBrowser(boolean recording) {
+    private void launchBrowser() {
         String url = normalizeUrl(urlField.getText());
         if (url == null) { info("Enter a valid http(s) URL, e.g. https://example.com"); return; }
         BrowserConfiguration cfg = project != null ? project.browserConfig.copy() : new BrowserConfiguration();
@@ -1453,7 +1459,7 @@ public class MainWindow {
                 List<Map<String, String>> rows = TestData.loadExcel(excelFile, project.excelSheetName);
                 log("Using Excel test data: " + rows.size() + " row(s), headers " + String.join(", ", rows.get(0).keySet()));
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             showError("Excel test data is invalid", e);
             return;
         }
@@ -1562,9 +1568,14 @@ public class MainWindow {
         log("Running: playwright " + String.join(" ", args));
         bg.submit(() -> {
             try {
-                int code = ProcessRunner.run(cmd, null, this::log);
-                log("playwright " + args.get(0) + " finished with exit code " + code);
-            } catch (Exception e) { Platform.runLater(() -> showError("Playwright CLI failed", e)); }
+                int exitCode = ProcessRunner.run(cmd, null, this::log);
+                log("playwright " + args.get(0) + " finished with exit code " + exitCode);
+            } catch (IOException e) {
+                Platform.runLater(() -> showError("Playwright CLI failed", e));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Platform.runLater(() -> showError("Playwright CLI was interrupted", e));
+            }
         });
     }
 
