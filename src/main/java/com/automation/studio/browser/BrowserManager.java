@@ -149,6 +149,10 @@ public class BrowserManager implements AutoCloseable {
         return submit(() -> ctx == null ? "" : ctx.page.url());
     }
 
+    public ExecutionContext ctx() {
+        return ctx;
+    }
+
     public CompletableFuture<Void> stop() {
         return submit(() -> { cleanup(); return null; });
     }

@@ -110,6 +110,7 @@ public class MainWindow {
     private Stage codeWindow;
     private Stage consoleWindow;
     private Stage stepsWindow;
+    private Stage locatorPlaygroundWindow;
     private final Label result = new Label("RESULT: -");
     private final Button openReport = new Button();
     private final Button startRec = new Button();
@@ -268,7 +269,9 @@ public class MainWindow {
         stepsWindowButton.getStyleClass().addAll("utility-tab", "button-quiet");
         Button consoleWindowButton = IconButton.create("Execution console", "≡", this::showConsoleWindow);
         consoleWindowButton.getStyleClass().addAll("utility-tab", "button-quiet");
-        FlowPane bottom = new FlowPane(8, 6, result, openReport, stepsWindowButton, javaWindow, consoleWindowButton);
+        Button locatorPlaygroundButton = IconButton.create("Locator Playground", "◉", this::showLocatorPlayground);
+        locatorPlaygroundButton.getStyleClass().addAll("utility-tab", "button-quiet");
+        FlowPane bottom = new FlowPane(8, 6, result, openReport, stepsWindowButton, javaWindow, consoleWindowButton, locatorPlaygroundButton);
         bottom.getStyleClass().add("status-bar");
         bottom.setPadding(new Insets(8));
         root.setBottom(bottom);
@@ -619,6 +622,142 @@ public class MainWindow {
         return box;
     }
 
+    private Node buildLocatorPlaygroundPane() {
+        ComboBox<String> locatorType = new ComboBox<>();
+        locatorType.getItems().addAll("ROLE", "LABEL", "PLACEHOLDER", "ALT_TEXT", "TESTID", "TEXT", "TITLE", "ID", "CSS", "XPATH");
+        locatorType.setValue("CSS");
+        TextField locatorValue = new TextField();
+        locatorValue.setPromptText("Enter locator value (e.g., .btn-primary, //button, getByRole...)");
+        TextField frameSelector = new TextField();
+        frameSelector.setPromptText("Optional frame selector (e.g., iframe#main)");
+        Button test = new Button("TEST LOCATOR");
+        test.getStyleClass().add("button-primary");
+        Button copyToStep = new Button("COPY TO SELECTED STEP");
+        copyToStep.getStyleClass().add("button-secondary");
+        TextArea results = new TextArea();
+        results.setEditable(false);
+        results.setWrapText(true);
+        results.setAccessibleText("Locator test results");
+        results.getStyleClass().add("console-editor");
+
+        test.setOnAction(e -> {
+            if (!browser.isRunning()) {
+                results.setText("Browser is not running. Start the browser first (or start recording).");
+                return;
+            }
+            String type = locatorType.getValue();
+            String value = locatorValue.getText();
+            String frame = frameSelector.getText();
+            if (value == null || value.isBlank()) {
+                results.setText("Please enter a locator value.");
+                return;
+            }
+            results.setText("Testing...");
+            bg.submit(() -> {
+                try {
+                    String res = browser.submit(() -> {
+                        com.microsoft.playwright.Page p = browser.ctx() == null ? null : browser.ctx().page;
+                        if (p == null) return "No active page.";
+                        com.microsoft.playwright.Locator loc = null;
+                        String f = frame == null ? "" : frame.trim();
+                        if (!f.isBlank()) {
+                            com.microsoft.playwright.FrameLocator fl = p.frameLocator(f);
+                            com.microsoft.playwright.Locator fLoc2 = switch (type) {
+                                case "ROLE" -> { try { yield fl.getByRole(com.microsoft.playwright.options.AriaRole.valueOf(value.toUpperCase()), new com.microsoft.playwright.FrameLocator.GetByRoleOptions()); } catch (Exception ex) { yield fl.locator(value); } }
+                                case "LABEL" -> fl.getByLabel(value);
+                                case "PLACEHOLDER" -> fl.getByPlaceholder(value);
+                                case "ALT_TEXT" -> fl.getByAltText(value);
+                                case "TESTID" -> fl.getByTestId(value);
+                                case "TEXT" -> fl.getByText(value);
+                                case "TITLE" -> fl.getByTitle(value);
+                                case "ID" -> fl.locator("#" + value);
+                                case "CSS" -> fl.locator(value);
+                                case "XPATH" -> fl.locator("xpath=" + value);
+                                default -> fl.locator(value);
+                            };
+                            try {
+                                int count = fLoc2.count();
+                                return "Frame '" + f + "' | Locator: " + type + "=" + value + " | Matches: " + count;
+                            } catch (Exception ex) {
+                                return "Frame '" + f + "' error: " + ex.getMessage();
+                            }
+                        }
+                        switch (type) {
+                            case "ROLE" -> loc = p.getByRole(com.microsoft.playwright.options.AriaRole.valueOf(value.toUpperCase()), new com.microsoft.playwright.Page.GetByRoleOptions());
+                            case "LABEL" -> loc = p.getByLabel(value);
+                            case "PLACEHOLDER" -> loc = p.getByPlaceholder(value);
+                            case "ALT_TEXT" -> loc = p.getByAltText(value);
+                            case "TESTID" -> loc = p.getByTestId(value);
+                            case "TEXT" -> loc = p.getByText(value);
+                            case "TITLE" -> loc = p.getByTitle(value);
+                            case "ID" -> loc = p.locator("#" + value);
+                            case "CSS" -> loc = p.locator(value);
+                            case "XPATH" -> loc = p.locator("xpath=" + value);
+                            default -> loc = p.locator(value);
+                        }
+                        try {
+                            int count = loc.count();
+                            return "Page | Locator: " + type + "=" + value + " | Matches: " + count;
+                        } catch (Exception ex) {
+                            return "Error: " + ex.getMessage();
+                        }
+                    }).get();
+                    Platform.runLater(() -> results.setText(res));
+                } catch (Exception ex) {
+                    Platform.runLater(() -> results.setText("Error: " + ex.getMessage()));
+                }
+            });
+        });
+
+        copyToStep.setOnAction(e -> {
+            TestStep step = table.getSelectionModel().getSelectedItem();
+            ActionDefinition definition = step == null ? null : catalog.get(step.action);
+            if (step == null || definition == null || !definition.needsLocator) {
+                results.setText("Select a test step that uses a locator to copy to it.");
+                return;
+            }
+            String type = locatorType.getValue();
+            String value = locatorValue.getText();
+            String frame = frameSelector.getText();
+            if (value == null || value.isBlank()) {
+                results.setText("Please enter a locator value.");
+                return;
+            }
+            try {
+                step.locator = LocatorInfo.xpath(type.equals("XPATH") ? value : (type.equals("CSS") ? value : ("xpath=" + value)));
+                if (type.equals("CSS") && !type.equals("XPATH")) {
+                    step.locator.locatorType = com.automation.studio.locator.LocatorInfo.Type.CSS;
+                    step.locator.locatorValue = value;
+                } else if (type.equals("XPATH")) {
+                    step.locator.locatorType = com.automation.studio.locator.LocatorInfo.Type.XPATH;
+                    step.locator.locatorValue = value;
+                } else {
+                    step.locator.locatorType = com.automation.studio.locator.LocatorInfo.Type.CSS;
+                    step.locator.locatorValue = value;
+                }
+                step.locator.frameSelector = frame == null ? "" : frame.trim();
+                syncSteps(true);
+                results.setText("Copied to selected step.");
+            } catch (Exception ex) {
+                results.setText("Error: " + ex.getMessage());
+            }
+        });
+
+        HBox row1 = new HBox(6, new Label("Type:"), locatorType, new Label("Value:"), locatorValue);
+        HBox.setHgrow(locatorValue, Priority.ALWAYS);
+        row1.setAlignment(Pos.CENTER_LEFT);
+        HBox row2 = new HBox(6, new Label("Frame:"), frameSelector);
+        HBox.setHgrow(frameSelector, Priority.ALWAYS);
+        row2.setAlignment(Pos.CENTER_LEFT);
+        HBox actions = new HBox(6, test, copyToStep);
+        VBox box = new VBox(8, new Label("LOCATOR PLAYGROUND"), row1, row2, actions, new Label("Results:"), results);
+        box.getStyleClass().add("workspace-panel");
+        box.getChildren().get(0).getStyleClass().add("section-title");
+        box.setPadding(new Insets(10));
+        VBox.setVgrow(results, Priority.ALWAYS);
+        return box;
+    }
+
     private void showCodeWindow() {
         if (codeWindow == null) {
             codeWindow = createUtilityWindow("Generated Java Code", buildCodePane(), 1050, 680);
@@ -645,6 +784,18 @@ public class MainWindow {
         }
         consoleWindow.show();
         consoleWindow.toFront();
+    }
+
+    private void showLocatorPlayground() {
+        if (locatorPlaygroundWindow != null && locatorPlaygroundWindow.isShowing()) {
+            locatorPlaygroundWindow.toFront();
+            return;
+        }
+        if (locatorPlaygroundWindow == null) {
+            locatorPlaygroundWindow = createUtilityWindow("Locator Playground", buildLocatorPlaygroundPane(), 900, 640);
+        }
+        locatorPlaygroundWindow.show();
+        locatorPlaygroundWindow.toFront();
     }
 
     private Stage createUtilityWindow(String title, Node content, double width, double height) {
